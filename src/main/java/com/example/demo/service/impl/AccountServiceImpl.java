@@ -7,8 +7,11 @@ import com.example.demo.repository.AccountRepository;
 import com.example.demo.service.AccountService;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
-public class AccountServiceImpl  implements AccountService {
+public class AccountServiceImpl implements AccountService {
 
     private AccountRepository accountRepository;
 
@@ -30,4 +33,52 @@ public class AccountServiceImpl  implements AccountService {
                 .orElseThrow(() -> new RuntimeException("Account does not exists"));
         return AccountMapper.mapToAccountDto(account);
     }
+
+    @Override
+    public AccountDto deposit(long accountid, double amount) {
+        Account account = accountRepository
+                .findById(accountid)
+                .orElseThrow(() -> new RuntimeException("Account does not exists"));
+
+        double total = account.getBalance() + amount;
+        account.setBalance(total);
+        Account savedAccount = accountRepository.save(account);
+        return AccountMapper.mapToAccountDto(savedAccount);
+    }
+
+    @Override
+    public AccountDto withdraw(long accountid, double amount) {
+        Account account = accountRepository
+                .findById(accountid)
+                .orElseThrow(() -> new RuntimeException("Account does not exists"));
+
+        if(account.getBalance() < amount){
+            throw new RuntimeException("Insufficient amount");
+        }
+
+        double total = account.getBalance() - amount;
+        account.setBalance(total);
+        Account savedAccount = accountRepository.save(account);
+        return AccountMapper.mapToAccountDto(savedAccount);
+    }
+
+    @Override
+    public List<AccountDto> getAllAccounts() {
+        List<Account> accounts = accountRepository.findAll();
+        return accounts.stream().map((account) -> AccountMapper.mapToAccountDto(account))
+                .collect(Collectors.toList());
+
+    }
+
+    @Override
+    public void deleteAccount(long id) {
+        Account account = accountRepository
+                .findById(id)
+                .orElseThrow(() -> new RuntimeException("Account does not exists"));
+
+        accountRepository.deleteById(id);
+    }
+
 }
+
+
